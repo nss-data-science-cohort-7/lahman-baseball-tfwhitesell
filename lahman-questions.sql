@@ -35,10 +35,34 @@ WHERE yearid = 2016
 GROUP BY 1;
 
 -- 3. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the 
--- same for home runs per game. Do you see any trends? (Hint: For this question, you might find it helpful to look at the 
--- **generate_series** function (https://www.postgresql.org/docs/9.1/functions-srf.html). If you want to see an example of this in action, 
--- check out this DataCamp video: 
--- https://campus.datacamp.com/courses/exploratory-data-analysis-in-sql/summarizing-and-aggregating-numeric-data?ex=6)
+-- same for home runs per game. Do you see any trends?
+-- easiest way
+SELECT yearid / 10 * 10 AS decade,
+	ROUND((SUM(so) * 1.0) / SUM(ghome), 2) AS avg_so, -- G doubles the number of games since there are 2 teams
+	ROUND((SUM(hr) * 1.0) / SUM(ghome), 2) AS avg_hr
+FROM teams
+WHERE yearid >= 1920
+GROUP BY 1
+ORDER BY 1;
+
+-- using GENERATE_SERIES
+WITH decade AS (
+	SELECT GENERATE_SERIES(1920, 2016, 10) AS start_year,
+		GENERATE_SERIES(1929, 2019, 10) AS end_year
+)
+
+SELECT start_year AS decade,
+ROUND((SUM(so) * 1.0) / SUM(ghome), 2) AS avg_so, -- G doubles the number of games since there are 2 teams
+	ROUND((SUM(hr) * 1.0) / SUM(ghome), 2) AS avg_hr
+FROM teams
+LEFT JOIN decade
+	ON yearid BETWEEN start_year AND end_year
+WHERE yearid >= 1920
+GROUP BY 1
+ORDER BY 1;
+-- Strikeouts tripled over the time period covered, while homeruns have increased by about 2.5 times.
+-- The 2000s decade was noticeably higher than the surrounding decades and the 1990s also increased significantly over the decade prior.
+-- Does this correspond with the most egregious use of steroids?
 
 -- 4. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base 
 -- attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only 
