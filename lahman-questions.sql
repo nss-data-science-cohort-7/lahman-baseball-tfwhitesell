@@ -85,6 +85,61 @@ ORDER BY 5 DESC;
 -- wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world 
 -- series champion; determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 to 2016 was 
 -- it the case that a team with the most wins also won the world series? What percentage of the time?
+SELECT name,
+	w AS wins,
+	l AS losses,
+	wswin AS ws_winner
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+	AND wswin = 'N'
+ORDER BY 2 DESC;
+-- The Seattle Mariners had the largest number of wins in the given time period without winning the World Series.
+
+SELECT name,
+	w AS wins,
+	l AS losses,
+	wswin AS ws_winner,
+	yearid
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+	AND wswin = 'Y'
+ORDER BY 2;
+-- The Los Angeles Dodgers won 63 games in 1981 and also won the World Series.
+-- There was a player's strike in 1981 which reduced the total number of games played that year.
+
+-- most wins per year
+WITH most_wins AS (
+	SELECT yearid,
+		MAX(w) AS wins
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+		AND yearid != 1994 -- no WS in 1994
+	GROUP BY 1
+),
+
+-- World Series winners by year
+ws_winners AS (
+	SELECT yearid,
+		name,
+		w AS wins,
+		wswin AS ws_winner
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+		AND wswin = 'Y'
+)
+
+SELECT -- w.yearid,
+-- 	w.name,
+-- 	w.wins,
+	COUNT(CASE WHEN w.wins = m.wins THEN 1 END) AS double_winners,
+	ROUND(AVG(CASE WHEN w.wins = m.wins THEN 1.0
+		 	ELSE 0 END) * 100, 2) AS percent_double_winners
+FROM ws_winners AS w
+INNER JOIN most_wins AS m
+	ON w.yearid = m.yearid;
+-- The team with the most wins in a given year also won the World Series 12 times between 1970 and 2016, which was 26.09% of the time.
+-- There was no World Series played in 1994 due to a strike.
+
 
 -- 6. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give 
 -- their full name and the teams that they were managing when they won the award.
