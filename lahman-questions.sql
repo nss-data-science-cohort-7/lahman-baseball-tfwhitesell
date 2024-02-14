@@ -68,6 +68,18 @@ ORDER BY 1;
 -- attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only 
 -- players who attempted _at least_ 20 stolen bases. Report the players' names, number of stolen bases, number of attempts, and stolen 
 -- base percentage.
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name,
+	sb AS num_stolen,
+	cs AS caught_stealing,
+	sb + cs AS total_attempted,
+	ROUND((sb * 100.0) / (sb + cs), 2) AS percent_success
+FROM batting AS b
+INNER JOIN people AS p
+	ON b.playerid = p.playerid
+WHERE yearid = 2016
+	AND (sb + cs) >= 20
+ORDER BY 5 DESC;
+-- Chris Owings had the most success stealing bases in 2016 with a 91.3% success rate.
 
 -- 5. From 1970 to 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number 
 -- wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world 
