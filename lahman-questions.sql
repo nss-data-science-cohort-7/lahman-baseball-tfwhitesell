@@ -140,9 +140,51 @@ INNER JOIN most_wins AS m
 -- The team with the most wins in a given year also won the World Series 12 times between 1970 and 2016, which was 26.09% of the time.
 -- There was no World Series played in 1994 due to a strike.
 
-
 -- 6. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give 
 -- their full name and the teams that they were managing when they won the award.
+WITH nl_winners AS (
+	SELECT a.yearid,
+		a.lgid,
+		a.playerid,
+		t.name AS team_name
+	FROM awardsmanagers AS a
+	INNER JOIN managers AS m
+		ON a.playerid = m.playerid
+			AND a.yearid = m.yearid
+	INNER JOIN teams AS t
+		ON m.teamid = t.teamid
+			AND m.yearid = t.yearid
+	WHERE awardid LIKE 'TSN%'
+		AND a.lgid = 'NL'
+),
+
+al_winners AS (
+	SELECT a.yearid,
+		a.lgid,
+		a.playerid,
+		t.name AS team_name
+	FROM awardsmanagers AS a
+	INNER JOIN managers AS m
+		ON a.playerid = m.playerid
+			AND a.yearid = m.yearid
+	INNER JOIN teams AS t
+		ON m.teamid = t.teamid
+			AND m.yearid = t.yearid
+	WHERE awardid LIKE 'TSN%'
+		AND a.lgid = 'AL'
+)
+
+SELECT CONCAT(namefirst, ' ', namelast) AS manager_name,
+	n.yearid AS nl_win,
+	n.team_name,
+	a.yearid AS al_win,
+	a.team_name
+FROM nl_winners AS n
+INNER JOIN al_winners AS a
+	ON n.playerid = a.playerid
+INNER JOIN people AS p
+	ON n.playerid = p.playerid;
+-- This gets the answer but I'd like the format to be better.
 
 -- 7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? Only consider pitchers who started at least 10 games 
 -- (across all teams). Note that pitchers often play for more than one team in a season, so be sure that you are counting all stats 
