@@ -10,7 +10,7 @@ WITH college_play AS (
 
 SELECT namefirst,
 	namelast,
-	SUM(salary) AS total_salary
+	SUM(salary::numeric::money) AS total_salary
 FROM people AS p
 INNER JOIN salaries AS s
 	ON p.playerid = s.playerid
@@ -70,7 +70,6 @@ ORDER BY 1;
 -- base percentage.
 SELECT CONCAT(namefirst, ' ', namelast) AS player_name,
 	SUM(sb) AS num_stolen,
-	-- SUM(cs) AS caught_stealing,
 	SUM(sb + cs) AS total_attempted,
 	ROUND((SUM(sb) * 100.0) / SUM(sb + cs), 2) AS percent_success
 FROM batting AS b
@@ -104,9 +103,11 @@ SELECT name,
 FROM teams
 WHERE yearid BETWEEN 1970 AND 2016
 	AND wswin = 'Y'
+	AND yearid != 1981
 ORDER BY 2;
 -- The Los Angeles Dodgers won 63 games in 1981 and also won the World Series.
 -- There was a player's strike in 1981 which reduced the total number of games played that year.
+-- The St Louis Cardinals won 83 games in 2006 and also won the World Series.
 
 -- most wins per year
 WITH most_wins AS (
@@ -190,11 +191,13 @@ INNER JOIN people AS p
 -- 7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? Only consider pitchers who started at least 10 games 
 -- (across all teams). Note that pitchers often play for more than one team in a season, so be sure that you are counting all stats 
 -- for each player.
--- to do: join salary (yearid = 2016) and people to get names; do math for salary per SO
+-- players can have more than one record in the pitching table (one for each team)
+-- but salary looks to be yearly total across all teams
 SELECT CONCAT(namefirst, ' ', namelast) AS player_name,
+	p.playerid,
 	SUM(so) AS strikeouts,
-	SUM(salary::numeric::money) AS salary,
-	CAST(ROUND(SUM(salary)::numeric / SUM(so)::numeric, 2) AS MONEY) AS dollars_per_strikeout
+	MAX(salary)::numeric::money AS salary,
+	CAST(ROUND(MAX(salary)::numeric / SUM(so)::numeric, 2) AS MONEY) AS dollars_per_strikeout
 FROM pitching AS p
 INNER JOIN salaries AS s
 	ON p.playerid = s.playerid
@@ -202,13 +205,30 @@ INNER JOIN salaries AS s
 INNER JOIN people AS p2
 	ON p.playerid = p2.playerid
 WHERE p.yearid = 2016
-GROUP BY 1
+GROUP BY 1, 2
 HAVING SUM(gs) >= 10
-ORDER BY 4 DESC;
+ORDER BY 5 DESC;
 
 -- 8. Find all players who have had at least 3000 career hits. Report those players' names, total number of hits, and the year they were 
 -- inducted into the hall of fame (If they were not inducted into the hall of fame, put a null in that column.) Note that a player being 
 -- inducted into the hall of fame is indicated by a 'Y' in the **inducted** column of the halloffame table.
+SELECT playerid,
+	CASE WHEN inducted = 'Y' THEN yearid END AS year_inducted
+FROM halloffame
+GROUP BY 1, 2
+ORDER BY 1
+
+SELECT b.playerid,
+	SUM(h) AS career_hits
+FROM batting AS b
+GROUP BY 1
+HAVING SUM(h) >= 3000
+ORDER BY 2
+
+SELECT *
+FROM halloffame
+ORDER BY 1
+LIMIT 10
 
 -- 9. Find all players who had at least 1,000 hits for two different teams. Report those players' full names.
 
