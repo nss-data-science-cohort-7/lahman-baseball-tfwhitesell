@@ -38,7 +38,7 @@ GROUP BY 1;
 -- same for home runs per game. Do you see any trends?
 -- easiest way
 SELECT yearid / 10 * 10 AS decade,
-	ROUND((SUM(so) * 1.0) / SUM(ghome), 2) AS avg_so, -- G doubles the number of games since there are 2 teams
+	ROUND((SUM(so) * 1.0) / SUM(ghome), 2) AS avg_so, -- g doubles the number of games since there are 2 teams
 	ROUND((SUM(hr) * 1.0) / SUM(ghome), 2) AS avg_hr
 FROM teams
 WHERE yearid >= 1920
@@ -52,7 +52,7 @@ WITH decade AS (
 )
 
 SELECT start_year AS decade,
-ROUND((SUM(so) * 1.0) / SUM(ghome), 2) AS avg_so, -- G doubles the number of games since there are 2 teams
+ROUND((SUM(so) * 1.0) / SUM(ghome), 2) AS avg_so, -- g doubles the number of games since there are 2 teams
 	ROUND((SUM(hr) * 1.0) / SUM(ghome), 2) AS avg_hr
 FROM teams
 LEFT JOIN decade
@@ -69,16 +69,17 @@ ORDER BY 1;
 -- players who attempted _at least_ 20 stolen bases. Report the players' names, number of stolen bases, number of attempts, and stolen 
 -- base percentage.
 SELECT CONCAT(namefirst, ' ', namelast) AS player_name,
-	sb AS num_stolen,
-	cs AS caught_stealing,
-	sb + cs AS total_attempted,
-	ROUND((sb * 100.0) / (sb + cs), 2) AS percent_success
+	SUM(sb) AS num_stolen,
+	-- SUM(cs) AS caught_stealing,
+	SUM(sb + cs) AS total_attempted,
+	ROUND((SUM(sb) * 100.0) / SUM(sb + cs), 2) AS percent_success
 FROM batting AS b
 INNER JOIN people AS p
 	ON b.playerid = p.playerid
 WHERE yearid = 2016
-	AND (sb + cs) >= 20
-ORDER BY 5 DESC;
+GROUP BY 1
+HAVING SUM(sb + cs) >= 20
+ORDER BY 4 DESC;
 -- Chris Owings had the most success stealing bases in 2016 with a 91.3% success rate.
 
 -- 5. From 1970 to 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number 
@@ -189,6 +190,21 @@ INNER JOIN people AS p
 -- 7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? Only consider pitchers who started at least 10 games 
 -- (across all teams). Note that pitchers often play for more than one team in a season, so be sure that you are counting all stats 
 -- for each player.
+-- to do: join salary (yearid = 2016) and people to get names; do math for salary per SO
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name,
+	SUM(so) AS strikeouts,
+	SUM(salary::numeric::money) AS salary,
+	CAST(ROUND(SUM(salary)::numeric / SUM(so)::numeric, 2) AS MONEY) AS dollars_per_strikeout
+FROM pitching AS p
+INNER JOIN salaries AS s
+	ON p.playerid = s.playerid
+		AND p.yearid = s.yearid
+INNER JOIN people AS p2
+	ON p.playerid = p2.playerid
+WHERE p.yearid = 2016
+GROUP BY 1
+HAVING SUM(gs) >= 10
+ORDER BY 4 DESC;
 
 -- 8. Find all players who have had at least 3000 career hits. Report those players' names, total number of hits, and the year they were 
 -- inducted into the hall of fame (If they were not inducted into the hall of fame, put a null in that column.) Note that a player being 
