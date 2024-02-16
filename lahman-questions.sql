@@ -212,23 +212,25 @@ ORDER BY 5 DESC;
 -- 8. Find all players who have had at least 3000 career hits. Report those players' names, total number of hits, and the year they were 
 -- inducted into the hall of fame (If they were not inducted into the hall of fame, put a null in that column.) Note that a player being 
 -- inducted into the hall of fame is indicated by a 'Y' in the **inducted** column of the halloffame table.
-SELECT playerid,
-	CASE WHEN inducted = 'Y' THEN yearid END AS year_inducted
-FROM halloffame
-GROUP BY 1, 2
-ORDER BY 1
+WITH inducted AS (
+	SELECT playerid,
+		yearid
+	FROM halloffame
+	WHERE inducted = 'Y'
+)
 
-SELECT b.playerid,
+SELECT b.playerid, -- getting 3 extra people unless playerid appears in the select, not sure why
+	CONCAT(namefirst, ' ', namelast) AS player_name,
+	i.yearid AS year_inducted,
 	SUM(h) AS career_hits
 FROM batting AS b
-GROUP BY 1
+INNER JOIN people AS p
+	ON b.playerid = p.playerid
+LEFT JOIN inducted AS i
+	ON b.playerid = i.playerid
+GROUP BY 1, 2, 3
 HAVING SUM(h) >= 3000
-ORDER BY 2
-
-SELECT *
-FROM halloffame
-ORDER BY 1
-LIMIT 10
+ORDER BY 1;
 
 -- 9. Find all players who had at least 1,000 hits for two different teams. Report those players' full names.
 
