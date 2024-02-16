@@ -219,8 +219,7 @@ WITH inducted AS (
 	WHERE inducted = 'Y'
 )
 
-SELECT b.playerid, -- getting 3 extra people unless playerid appears in the select, not sure why
-	CONCAT(namefirst, ' ', namelast) AS player_name,
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name,
 	i.yearid AS year_inducted,
 	SUM(h) AS career_hits
 FROM batting AS b
@@ -228,11 +227,27 @@ INNER JOIN people AS p
 	ON b.playerid = p.playerid
 LEFT JOIN inducted AS i
 	ON b.playerid = i.playerid
-GROUP BY 1, 2, 3
+GROUP BY 1, 2, b.playerid
 HAVING SUM(h) >= 3000
 ORDER BY 1;
 
 -- 9. Find all players who had at least 1,000 hits for two different teams. Report those players' full names.
+WITH over_1000 AS (
+	SELECT playerid,
+		teamid,
+		SUM(h) AS hits_per_team
+	FROM batting
+	GROUP BY 1, 2
+	HAVING SUM(h) >= 1000
+)
+
+SELECT CONCAT(namefirst, ' ', namelast) AS player_name
+FROM people AS p
+INNER JOIN over_1000 AS o
+	ON p.playerid = o.playerid
+	GROUP BY 1, p.playerid
+HAVING COUNT(DISTINCT teamid) > 1
+ORDER BY 1;
 
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league 
 -- for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs 
