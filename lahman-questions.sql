@@ -93,7 +93,7 @@ FROM teams
 WHERE yearid BETWEEN 1970 AND 2016
 	AND wswin = 'N'
 ORDER BY 2 DESC;
--- The Seattle Mariners had the largest number of wins in the given time period without winning the World Series.
+-- The Seattle Mariners had the largest number of wins (116) in the given time period without winning the World Series.
 
 SELECT name,
 	w AS wins,
@@ -130,10 +130,7 @@ ws_winners AS (
 		AND wswin = 'Y'
 )
 
-SELECT -- w.yearid,
--- 	w.name,
--- 	w.wins,
-	COUNT(CASE WHEN w.wins = m.wins THEN 1 END) AS double_winners,
+SELECT COUNT(CASE WHEN w.wins = m.wins THEN 1 END) AS double_winners,
 	ROUND(AVG(CASE WHEN w.wins = m.wins THEN 1.0
 		 	ELSE 0 END) * 100, 2) AS percent_double_winners
 FROM ws_winners AS w
@@ -193,6 +190,7 @@ INNER JOIN people AS p
 -- for each player.
 -- players can have more than one record in the pitching table (one for each team)
 -- but salary looks to be yearly total across all teams
+-- wrong answer but not sure why
 SELECT CONCAT(namefirst, ' ', namelast) AS player_name,
 	p.playerid,
 	SUM(so) AS strikeouts,
@@ -207,7 +205,7 @@ INNER JOIN people AS p2
 WHERE p.yearid = 2016
 GROUP BY 1, 2
 HAVING SUM(gs) >= 10
-ORDER BY 5 DESC;
+ORDER BY 1;
 
 -- 8. Find all players who have had at least 3000 career hits. Report those players' names, total number of hits, and the year they were 
 -- inducted into the hall of fame (If they were not inducted into the hall of fame, put a null in that column.) Note that a player being 
@@ -267,7 +265,7 @@ WITH yearly_hr AS (
 
 seasons AS (
 	SELECT playerid,
-		COUNT(DISTINCT yearid) AS years_played
+		COUNT(DISTINCT yearid) AS years_played -- there could be multiple rows per year if a player played for multiple teams
 	FROM batting
 	GROUP BY 1
 	HAVING COUNT(DISTINCT yearid) >= 10
@@ -282,22 +280,3 @@ INNER JOIN seasons AS s
 WHERE year_hr = max_hr
 	AND yearid = 2016
 	AND year_hr > 0;
-
--- After finishing the above questions, here are some open-ended questions to consider.
-
--- **Open-ended questions**
-
--- 11. Is there any correlation between number of wins and team salary? Use data from 2000 and later to answer this question. As you do 
--- this analysis, keep in mind that salaries across the whole league tend to increase together, so you may want to look on a year-by-year basis.
-
--- 12. In this question, you will explore the connection between number of wins and attendance.
-
---     a. Does there appear to be any correlation between attendance at home games and number of wins?  
---     b. Do teams that win the world series see a boost in attendance the following year? What about teams that made the playoffs? Making 
--- 	the playoffs means either being a division winner or a wild card winner.
-
-
--- 13. It is thought that since left-handed pitchers are more rare, causing batters to face them less often, that they are more effective. 
--- Investigate this claim and present evidence to either support or dispute this claim. First, determine just how rare left-handed pitchers 
--- are compared with right-handed pitchers. Are left-handed pitchers more likely to win the Cy Young Award? Are they more likely to make it 
--- into the hall of fame?
